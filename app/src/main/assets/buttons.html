@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Hello MUI</title>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1,maximum-scale=1,user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black">
+
+    <!--标准mui.css-->
+    <link rel="stylesheet" href="css/mui.min.css">
+    <!--App自定义的css-->
+    <!--<link rel="stylesheet" type="text/css" href="../css/app.css"/>-->
+    <style>
+			input, button, .mui-btn {
+				margin-top: 10px;
+				margin-left: 10px;
+			}
+
+    </style>
+
+    <!--&lt;!&ndash;引入 js sdk&ndash;&gt;-->
+    <!--<script type="text/javascript">-->
+			<!--(function(para) {-->
+				<!--var p = para.sdk_url,-->
+					<!--n = para.name,-->
+					<!--w = window,-->
+					<!--d = document,-->
+					<!--s = 'script',-->
+					<!--x = null,-->
+					<!--y = null;-->
+				<!--w['sensorsDataAnalytic201505'] = n;-->
+				<!--w[n] = w[n] || function(a) {-->
+					<!--return function() {-->
+						<!--(w[n]._q = w[n]._q || []).push([a, arguments]);-->
+					<!--}-->
+				<!--};-->
+				<!--var ifs = ['track', 'quick', 'register', 'registerPage', 'registerOnce', 'registerSession', 'registerSessionOnce', 'trackSignup', 'trackAbtest', 'setProfile', 'setOnceProfile', 'appendProfile', 'incrementProfile', 'deleteProfile', 'unsetProfile', 'identify', 'login', 'logout', 'clearAllRegister'];-->
+				<!--for(var i = 0; i < ifs.length; i++) {-->
+					<!--w[n][ifs[i]] = w[n].call(null, ifs[i]);-->
+				<!--}-->
+				<!--if(!w[n]._t) {-->
+					<!--x = d.createElement(s), y = d.getElementsByTagName(s)[0];-->
+					<!--x.async = 1;-->
+					<!--x.src = p;-->
+					<!--y.parentNode.insertBefore(x, y);-->
+					<!--w[n].para = para;-->
+				<!--}-->
+			<!--})({-->
+
+				<!--sdk_url: 'sensorsdata.full.js',-->
+				<!--name: 'sa',-->
+				<!--web_url: 'http://wss.cc.cc',-->
+				<!--heatmap: {},-->
+				<!--use_app_track: true, //在这里指定开启使用app端发送数据-->
+				<!--server_url: 'http://101.10.11.209:8006/sa?token=251b8f7d3f08d0b0'-->
+			<!--});-->
+
+			<!--sa.quick('autoTrack')-->
+		<!--</script>-->
+
+    <script>
+    (function(para) {
+    var n = para.name;
+    window['sensorsDataAnalytic201505'] = n;
+    window[n] = {
+    _q: [],
+    para: para
+    };
+    })({
+    sdk_url: 'http://static.sensorsdata.cn/sdk/1.7.1.2/sensorsdata.min.js',
+    name: 'sa',
+    use_app_track: true,
+    heatmap: {},
+    web_url: 'https://test-zouyuhan.cloud.sensorsdata.cn/?project=yangzhankun',
+    server_url: 'http://test-zouyuhan.cloud.sensorsdata.cn:8006/sa?token=db52d13749514676&project=yangzhankun'
+    });
+    </script>
+    <script src="https://static.sensorsdata.cn/sdk/test/sensorsdata.full2.js"></script>
+    <script>
+			sa.quick('autoTrack');
+	</script>
+
+</head>
+
+<body>
+<header class="mui-bar mui-bar-nav">
+    <a class="mui-action-back mui-icon mui-icon-left-nav mui-pull-left"></a>
+    <h1 class="mui-title">普通按钮</h1>
+</header>
+<div class="mui-content">
+    <div class="mui-content-padded">
+        <h5>有底色按钮：</h5>
+        <button type="button" class="mui-btn">
+            默认
+        </button>
+        <div class="mui-btn mui-btn-primary">
+            蓝色
+        </div>
+        <span class="mui-btn mui-btn-success">
+					绿色
+				</span>
+        <button type="button" class="mui-btn mui-btn-warning">
+            黄色
+        </button>
+        <button type="button" class="mui-btn mui-btn-danger">
+            红色
+        </button>
+        <button type="button" class="mui-btn mui-btn-royal">
+            紫色
+        </button>
+
+        <h5 style="margin-top: 10px;">无底色按钮（使用父元素的背景色）：</h5>
+        <button type="button" class="mui-btn mui-btn-outlined">
+            默认
+        </button>
+        <button type="button" class="mui-btn mui-btn-primary mui-btn-outlined">
+            操作
+        </button>
+        <button type="button" class="mui-btn mui-btn-success mui-btn-outlined">
+            成功
+        </button>
+        <button type="button" class="mui-btn mui-btn-warning mui-btn-outlined">
+            警告
+        </button>
+        <button type="button" class="mui-btn mui-btn-danger mui-btn-outlined">
+            危险
+        </button>
+        <button type="button" class="mui-btn mui-btn-royal mui-btn-outlined">
+            高贵
+        </button>
+        <h5 style="margin-top: 15px;">链接按钮：</h5>
+        <button type="button" class="mui-btn mui-btn-link">
+            添加
+        </button>
+        <h5 style="margin-top: 10px;">默认input标签样式：</h5>
+        <input type="button" value="type=button"/>
+        <input type="reset" value="type=reset"/>
+        <input type="submit" value="type=submit"/>
+        <h5 style="margin-top: 10px;">默认button标签样式：</h5>
+        <button type="button">按钮</button>
+
+    </div>
+</div>
+</body>
+<script src="js/mui.min.js"></script>
+<script>
+		mui.init({
+			swipeBack:true //启用右滑关闭功能
+		});
+
+</script>
+
+<script type="text/javascript">
+		//给Button 设置点击事件
+		var a = document.getElementsByClassName('mui-btn');
+		for(var i = 0;i < a.length; i++) {
+			document.getElementsByClassName('mui-btn')[i].onclick = function(){
+				alert('点击')
+				sa.track("buttonClick");
+
+			}
+		}
+
+</script>
+</html>
