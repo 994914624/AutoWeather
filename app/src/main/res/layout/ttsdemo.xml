@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
+    android:clipToPadding="true"
+    android:fitsSystemWindows="false"
     android:layout_height="match_parent">
     <!--android:focusable="true"-->
     <!--android:focusableInTouchMode="true">-->
@@ -21,7 +23,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent">
             <ImageView
-
+                android:visibility="gone"
                 android:layout_marginTop="20dp"
                 android:id="@+id/img_today"
                 android:src="@mipmap/sun"
@@ -29,7 +31,7 @@
                 android:layout_weight="1"
                 android:layout_height="0dp" />
             <ImageView
-
+                android:visibility="gone"
                 android:layout_marginTop="20dp"
                 android:id="@+id/img_tomorrow"
                 android:src="@mipmap/sun2"
@@ -37,7 +39,7 @@
                 android:layout_weight="1"
                 android:layout_height="0dp" />
             <ImageView
-
+                android:visibility="gone"
                 android:layout_marginTop="20dp"
                 android:id="@+id/img_nextDay"
                 android:src="@mipmap/sun"
@@ -45,7 +47,7 @@
                 android:layout_weight="1"
                 android:layout_height="0dp" />
             <ImageView
-
+                android:visibility="gone"
                 android:layout_marginTop="20dp"
                 android:layout_marginBottom="10dp"
                 android:id="@+id/img_nextnextDay"
@@ -71,7 +73,6 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_centerInParent="true"
-                android:text="天气预报"
                 android:textSize="30sp" />
 
 

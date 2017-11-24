@@ -2,24 +2,35 @@ package test.yang.com.apptest;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.view.ViewCompat;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.View;
 import android.view.View.OnClickListener;
+import android.view.ViewGroup;
 import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import com.alibaba.fastjson.JSON;
+import com.amap.api.location.AMapLocation;
+import com.amap.api.location.AMapLocationClient;
+import com.amap.api.location.AMapLocationClientOption;
+import com.amap.api.location.AMapLocationListener;
 import com.baidu.location.BDLocation;
 import com.baidu.location.BDLocationListener;
 import com.baidu.location.LocationClient;
@@ -32,9 +43,12 @@ import com.iflytek.cloud.SpeechError;
 import com.iflytek.cloud.SpeechSynthesizer;
 import com.iflytek.cloud.SynthesizerListener;
 
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -69,11 +83,15 @@ public class TtsMainActivity extends Activity implements OnClickListener {
         super.onCreate(savedInstanceState);
         requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.ttsdemo);
-        mToast=Toast.makeText(this,"",Toast.LENGTH_SHORT);
-        //启动时尝试获取定位
-        iniLocation();
         //权限申请
         requestPermissions();
+        setStatusBarUpperAPI21();
+        mToast=Toast.makeText(this,"",Toast.LENGTH_SHORT);
+
+        //启动时尝试获取定位
+        //gaodeLocation();
+        //iniLocation();
+
         //初始化View
         initView();
         //时间选择器
@@ -86,12 +104,69 @@ public class TtsMainActivity extends Activity implements OnClickListener {
             //设置默认为19：30
             setAlarm(19,30);
         }else {
+            showTip("设置播报时间为 "+pickTime);
                 String[] times = pickTime.split(":");
                 setAlarm(Integer.parseInt(times[0]),Integer.parseInt(times[1]));
 
         }
 
     }
+
+
+    /**
+     *高德定位
+     */
+
+    //声明AMapLocationClient类对象
+    public AMapLocationClient mLocationClientG = null;
+    //声明定位回调监听器
+    public AMapLocationListener mLocationListenerG = new AMapLocationListener() {
+        @Override
+        public void onLocationChanged(AMapLocation aMapLocation) {
+
+
+            if (aMapLocation != null) {
+                if (aMapLocation.getErrorCode() == 0) {
+                    //可在其中解析amapLocation获取相应内容。
+                    String city=aMapLocation.getCity();//城市信息
+                    if(!TextUtils.isEmpty(city)){
+                        Log.e(TAG,"gaode"+city);
+                        //天气
+                        getWeatherDatas(city);
+                    }
+                }else {
+                    //定位失败时，可通过ErrCode（错误码）信息来确定失败的原因，errInfo是错误信息，详见错误码表。
+                    Log.e("AmapError","location Error, ErrCode:"
+                            + aMapLocation.getErrorCode() + ", errInfo:"
+                            + aMapLocation.getErrorInfo());
+                    showTip("gaode location error");
+                    getWeatherDatas("郑州");
+                }
+            }
+        }
+    };
+    //声明AMapLocationClientOption对象
+    public AMapLocationClientOption mLocationOptionG = null;
+
+    private void gaodeLocation() {
+        //初始化AMapLocationClientOption对象
+        mLocationOptionG = new AMapLocationClientOption();
+        //初始化定位
+        mLocationClientG = new AMapLocationClient(getApplicationContext());
+        mLocationOptionG.setOnceLocation(true);
+        //定位精度
+        mLocationOptionG.setLocationMode(AMapLocationClientOption.AMapLocationMode.Battery_Saving);
+        //给定位客户端对象设置定位参数
+        mLocationClientG.setLocationOption(mLocationOptionG);
+
+        //设置定位回调监听
+        mLocationClientG.setLocationListener(mLocationListenerG);
+
+        //启动定位
+        mLocationClientG.startLocation();
+
+    }
+
 
     /**
      * 时间选择器
@@ -176,6 +251,13 @@ public class TtsMainActivity extends Activity implements OnClickListener {
                     if (code != ErrorCode.SUCCESS) {
                         showTip("语音合成失败,错误码: " + code);
                     }
+                }else {
+                    if(!TextUtils.isEmpty(location_city.getText())){
+                        //点击时再次获取天气
+                        getWeatherDatas(location_city.getText()+"");
+                    }else{
+                        getWeatherDatas("郑州");
+                    }
                 }
         }
     }
@@ -235,93 +317,13 @@ public class TtsMainActivity extends Activity implements OnClickListener {
     private BDLocationListener mLocationListener = new BDLocationListener() {
         @Override
         public void onReceiveLocation(final BDLocation bdLocation) {
-            try {
-
-                singleThreadExecutor.execute(new Runnable() {
-
-                    @Override
-                    public void run() {
-                        String city = bdLocation.getCity();
-                        if (TextUtils.isEmpty(city)) {
-                            //默认城市
-                            city = "尉氏县";
-                        }
-                        //获取天气信息
-                        String weatherResult = MyHttpURLUtils.getNetStrings(URLConstant.URL_WEATHER_CITY_NAME + city);
-                        if (TextUtils.isEmpty(weatherResult)) {
-                            return;
-                        }
-                        //解析天气信息
-                        Weather weather = JSON.parseObject(weatherResult, Weather.class);
-                        if (weather != null) {
-                            List listForecast = weather.getData().getForecast();
-
-                            Weather.DataBean.ForecastBean bean = (Weather.DataBean.ForecastBean) listForecast.get(0);
-                            readString = new StringBuilder();
-
-
-                            //今天天气
-                            readString.append("今天 " + bean.getDate().substring(0, bean.getDate().length() - 4) + "号 ");
-                            readString.append(bean.getDate().substring(bean.getDate().length() - 3, bean.getDate().length()) + "   ");
-                            readString.append("  天气 " + bean.getType() + "   ");
-                            readString.append(bean.getFengxiang() + "  " + bean.getFengli().substring(bean.getFengli().length() - 5, bean.getFengli().length() - 3) + "   ");
-                            readString.append("最低气温  " + bean.getLow().substring(3, bean.getLow().length()) + "  ");
-                            readString.append("最高气温  " + bean.getHigh().substring(3, bean.getHigh().length()) + "   ");
-                            //设置天气图标
-                            setImgIcon(bean.getType().toString(), img_today);
-
-                            //明天天气
-                            readString.append("          ");
-                            Weather.DataBean.ForecastBean bean2 = (Weather.DataBean.ForecastBean) listForecast.get(1);
-                            readString.append("明天 " + bean2.getDate().substring(0, bean2.getDate().length() - 4) + "号 ");
-                            readString.append(bean2.getDate().substring(bean2.getDate().length() - 3, bean2.getDate().length()) + "   ");
-                            readString.append("  天气 " + bean2.getType() + "   ");
-                            readString.append(bean2.getFengxiang() + "  " + bean2.getFengli().substring(bean2.getFengli().length() - 5, bean2.getFengli().length() - 3) + "   ");
-                            readString.append("最低气温  " + bean2.getLow().substring(3, bean2.getLow().length()) + "  ");
-                            readString.append("最高气温  " + bean2.getHigh().substring(3, bean2.getHigh().length()) + "   ");
-                            //设置天气图标
-                            setImgIcon(bean2.getType().toString(), img_tomorrow);
-
-                            //后天天气
-                            readString.append("          ");
-                            Weather.DataBean.ForecastBean bean3 = (Weather.DataBean.ForecastBean) listForecast.get(2);
-                            readString.append("后天 " + bean3.getDate().substring(0, bean3.getDate().length() - 4) + "号 ");
-                            readString.append(bean3.getDate().substring(bean3.getDate().length() - 3, bean3.getDate().length()) + "   ");
-                            readString.append("  天气 " + bean3.getType() + "   ");
-                            readString.append(bean3.getFengxiang() + "  " + bean3.getFengli().substring(bean3.getFengli().length() - 5, bean3.getFengli().length() - 3) + "   ");
-                            readString.append("最低气温  " + bean3.getLow().substring(3, bean3.getLow().length()) + "  ");
-                            readString.append("最高气温  " + bean3.getHigh().substring(3, bean3.getHigh().length()) + "   ");
-                            //设置天气图标
-                            setImgIcon(bean3.getType().toString(), img_nextDay);
-
-
-                            //大后天天气
-                            readString.append("          ");
-                            Weather.DataBean.ForecastBean bean4 = (Weather.DataBean.ForecastBean) listForecast.get(3);
-                            readString.append("大后天 " + bean4.getDate().substring(0, bean4.getDate().length() - 4) + "号 ");
-                            readString.append(bean4.getDate().substring(bean4.getDate().length() - 3, bean4.getDate().length()) + "   ");
-                            readString.append("  天气 " + bean4.getType() + "   ");
-                            readString.append(bean4.getFengxiang() + "  " + bean4.getFengli().substring(bean4.getFengli().length() - 5, bean4.getFengli().length() - 3) + "   ");
-                            readString.append("最低气温  " + bean4.getLow().substring(3, bean4.getLow().length()) + "  ");
-                            readString.append("最高气温  " + bean4.getHigh().substring(3, bean4.getHigh().length()) + "   ");
-                            //设置天气图标
-                            setImgIcon(bean4.getType().toString(), img_nextnextDay);
-
-                            Log.e(TAG, readString.toString()+"");
-                            if (mTts != null) {
-                                mTts.startSpeaking(readString.toString(), mTtsListener);
-                            }
-                        }
-                    }
-                });
-
-                location_city.setText(bdLocation.getCity() + "");
-
-            } catch (Exception e) {
-                e.printStackTrace();
-            } finally {
-
+            String city = bdLocation.getCity();
+            if (TextUtils.isEmpty(city)) {
+                //默认城市
+                city = "郑州";
             }
+            getWeatherDatas(city);
+
         }
 
     };
@@ -454,11 +456,11 @@ public class TtsMainActivity extends Activity implements OnClickListener {
                 // 设置在线合成发音人
                 mTts.setParameter(SpeechConstant.VOICE_NAME, voicer);
                 //设置合成语速
-                mTts.setParameter(SpeechConstant.SPEED, "50");
+                mTts.setParameter(SpeechConstant.SPEED, "40");
                 //设置合成音调
                 mTts.setParameter(SpeechConstant.PITCH, "50");
                 //设置合成音量
-                mTts.setParameter(SpeechConstant.VOLUME, "50");
+                mTts.setParameter(SpeechConstant.VOLUME, "70");
             } else {
                 mTts.setParameter(SpeechConstant.ENGINE_TYPE, SpeechConstant.TYPE_LOCAL);
                 // 设置本地合成发音人 voicer为空，默认通过语记界面指定发音人。
@@ -523,18 +525,29 @@ public class TtsMainActivity extends Activity implements OnClickListener {
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-        if (hasFocus && Build.VERSION.SDK_INT >= 19) {
-            View decorView = getWindow().getDecorView();
-            decorView.setSystemUiVisibility(
-                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-                            | View.SYSTEM_UI_FLAG_FULLSCREEN
-                            | View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY);
-        }
+//        if (hasFocus && Build.VERSION.SDK_INT >= 19) {
+//            View decorView = getWindow().getDecorView();
+//            decorView.setSystemUiVisibility(
+//                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
+//                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
+//                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+//                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
+//                            | View.SYSTEM_UI_FLAG_FULLSCREEN
+//                            //| View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
+//            );
+//        }
     }
 
+    @TargetApi(21)
+    private void setStatusBarUpperAPI21(){
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            Window window = getWindow();
+            window.clearFlags(WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS);
+            window.getDecorView().setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+            window.setStatusBarColor(Color.TRANSPARENT);
+        }
+    }
 
     @Override
     protected void onRestart() {
@@ -552,7 +565,8 @@ public class TtsMainActivity extends Activity implements OnClickListener {
         super.onResume();
         Log.e(TAG,"onResume");
         //定位
-        iniLocation();
+        //iniLocation();
+        gaodeLocation();
         //语音播报天气
         initTtsParam();
         if (readString != null) {
@@ -599,5 +613,108 @@ public class TtsMainActivity extends Activity implements OnClickListener {
                 Activity.MODE_PRIVATE);
         String strTime =sharedPreferences.getString("strTime", "");
         return strTime;
+    }
+
+    /**
+     * 获取天气数据
+     */
+    private void getWeatherDatas(final String city) {
+        try {
+            //设置城市
+            location_city.setText(city+"");
+
+            singleThreadExecutor.execute(new Runnable() {
+
+                @Override
+                public void run() {
+
+                    //获取天气信息一
+                    String weatherResult = MyHttpURLUtils.getNetStrings(URLConstant.URL_WEATHER_CITY_NAME + city);
+                    //获取天气信息二
+//                    String weatherResult2 = MyHttpURLUtils.getNetStrings(URLConstant.URL_WEATHER_CITY_NAME + city);
+//                    Log.e(TAG,weatherResult2.toString()+"");
+                    if (TextUtils.isEmpty(weatherResult)) {
+                        return;
+                    }
+                    //天气一
+                    getWeather_1(weatherResult);
+
+                }
+            });
+
+
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+
+        }
+    }
+
+    /**
+     *天气1数据
+     */
+    private void getWeather_1(String weatherResult) {
+        //解析天气信息
+        Weather weather = JSON.parseObject(weatherResult, Weather.class);
+        if (weather != null) {
+            List listForecast = weather.getData().getForecast();
+
+            Weather.DataBean.ForecastBean bean = (Weather.DataBean.ForecastBean) listForecast.get(0);
+            readString = new StringBuilder();
+
+
+            //今天天气
+            readString.append("今天 " + bean.getDate().substring(0, bean.getDate().length() - 4) + "号 ");
+            readString.append(bean.getDate().substring(bean.getDate().length() - 3, bean.getDate().length()) + "   ");
+            readString.append("  天气 " + bean.getType() + "   ");
+            readString.append(bean.getFengxiang() + "  " + bean.getFengli().substring(bean.getFengli().length() - 5, bean.getFengli().length() - 3) + "   ");
+            readString.append("最低气温  " + bean.getLow().substring(3, bean.getLow().length()) + "  ");
+            readString.append("最高气温  " + bean.getHigh().substring(3, bean.getHigh().length()) + "   ");
+            //设置天气图标
+            setImgIcon(bean.getType().toString(), img_today);
+
+            //明天天气
+            readString.append("          ");
+            Weather.DataBean.ForecastBean bean2 = (Weather.DataBean.ForecastBean) listForecast.get(1);
+            readString.append("明天 " + bean2.getDate().substring(0, bean2.getDate().length() - 4) + "号 ");
+            readString.append(bean2.getDate().substring(bean2.getDate().length() - 3, bean2.getDate().length()) + "   ");
+            readString.append("  天气 " + bean2.getType() + "   ");
+            readString.append(bean2.getFengxiang() + "  " + bean2.getFengli().substring(bean2.getFengli().length() - 5, bean2.getFengli().length() - 3) + "   ");
+            readString.append("最低气温  " + bean2.getLow().substring(3, bean2.getLow().length()) + "  ");
+            readString.append("最高气温  " + bean2.getHigh().substring(3, bean2.getHigh().length()) + "   ");
+            //设置天气图标
+            setImgIcon(bean2.getType().toString(), img_tomorrow);
+
+            //后天天气
+            readString.append("          ");
+            Weather.DataBean.ForecastBean bean3 = (Weather.DataBean.ForecastBean) listForecast.get(2);
+            readString.append("后天 " + bean3.getDate().substring(0, bean3.getDate().length() - 4) + "号 ");
+            readString.append(bean3.getDate().substring(bean3.getDate().length() - 3, bean3.getDate().length()) + "   ");
+            readString.append("  天气 " + bean3.getType() + "   ");
+            readString.append(bean3.getFengxiang() + "  " + bean3.getFengli().substring(bean3.getFengli().length() - 5, bean3.getFengli().length() - 3) + "   ");
+            readString.append("最低气温  " + bean3.getLow().substring(3, bean3.getLow().length()) + "  ");
+            readString.append("最高气温  " + bean3.getHigh().substring(3, bean3.getHigh().length()) + "   ");
+            //设置天气图标
+            setImgIcon(bean3.getType().toString(), img_nextDay);
+
+
+            //大后天天气
+            readString.append("          ");
+            Weather.DataBean.ForecastBean bean4 = (Weather.DataBean.ForecastBean) listForecast.get(3);
+            readString.append("大后天 " + bean4.getDate().substring(0, bean4.getDate().length() - 4) + "号 ");
+            readString.append(bean4.getDate().substring(bean4.getDate().length() - 3, bean4.getDate().length()) + "   ");
+            readString.append("  天气 " + bean4.getType() + "   ");
+            readString.append(bean4.getFengxiang() + "  " + bean4.getFengli().substring(bean4.getFengli().length() - 5, bean4.getFengli().length() - 3) + "   ");
+            readString.append("最低气温  " + bean4.getLow().substring(3, bean4.getLow().length()) + "  ");
+            readString.append("最高气温  " + bean4.getHigh().substring(3, bean4.getHigh().length()) + "   ");
+            //设置天气图标
+            setImgIcon(bean4.getType().toString(), img_nextnextDay);
+
+            Log.e(TAG, readString.toString()+"");
+            if (mTts != null) {
+                mTts.startSpeaking(readString.toString(), mTtsListener);
+            }
+        }
     }
 }

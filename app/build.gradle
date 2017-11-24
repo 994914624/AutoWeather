@@ -24,6 +24,8 @@ android {
     buildTypes {
         release {
             minifyEnabled false
+            //资源对齐
+            zipAlignEnabled true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
@@ -47,4 +49,6 @@ dependencies {
     compile files('libs/BaiduLBS_Android.jar')
     compile 'com.alibaba:fastjson:1.2.38'
     compile 'com.bigkoo:pickerview:2.0.8'
+
+    compile 'com.amap.api:location:latest.integration'
 }
