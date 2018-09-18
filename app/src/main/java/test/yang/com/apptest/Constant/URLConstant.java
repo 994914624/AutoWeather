@@ -12,6 +12,8 @@ public class URLConstant {
     public static final String URL_WEATHER_CITY_ID="http://wthrcdn.etouch.cn/weather_mini?citykey=";
 
     //天气接口二
-    public static final String URL_WEATHER_CITY_NAME2="http://wthrcdn.etouch.cn/weather_mini?city=";
+    public static final String URL_WEATHER_CITY_NAME_2="https://www.sojson.com/open/api/weather/json.shtml?city=";
+
+
 
 }
