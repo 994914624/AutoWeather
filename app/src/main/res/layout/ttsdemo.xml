@@ -1,97 +1,120 @@
 <?xml version="1.0" encoding="utf-8"?>
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
+    android:layout_height="match_parent"
     android:clipToPadding="true"
-    android:fitsSystemWindows="false"
-    android:layout_height="match_parent">
+    android:fitsSystemWindows="false">
     <!--android:focusable="true"-->
     <!--android:focusableInTouchMode="true">-->
 
     <ImageView
 
-        android:background="@mipmap/home2"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        />
+        android:background="@mipmap/home2" />
 
-    <FrameLayout
+
+    <android.support.v4.widget.DrawerLayout
+        android:id="@+id/drawer_layout"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-        <LinearLayout
-            android:orientation="vertical"
-            android:layout_marginTop="30sp"
+
+        <FrameLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent">
-            <ImageView
-                android:visibility="gone"
-                android:layout_marginTop="20dp"
-                android:id="@+id/img_today"
-                android:src="@mipmap/sun"
+
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_weight="1"
-                android:layout_height="0dp" />
-            <ImageView
-                android:visibility="gone"
-                android:layout_marginTop="20dp"
-                android:id="@+id/img_tomorrow"
-                android:src="@mipmap/sun2"
+                android:layout_height="match_parent">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:layout_marginTop="30sp"
+                    android:orientation="vertical">
+
+
+
+                    <ImageView
+                        android:id="@+id/img_today"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_marginTop="20dp"
+                        android:layout_weight="1"
+                        android:src="@mipmap/sun"
+                        android:visibility="gone" />
+
+                    <ImageView
+                        android:id="@+id/img_tomorrow"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_marginTop="20dp"
+                        android:layout_weight="1"
+                        android:src="@mipmap/sun2"
+                        android:visibility="gone" />
+
+                    <ImageView
+                        android:id="@+id/img_nextDay"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_marginTop="20dp"
+                        android:layout_weight="1"
+                        android:src="@mipmap/sun"
+                        android:visibility="gone" />
+
+                    <ImageView
+                        android:id="@+id/img_nextnextDay"
+                        android:layout_width="match_parent"
+                        android:layout_height="0dp"
+                        android:layout_marginBottom="10dp"
+                        android:layout_marginTop="20dp"
+                        android:layout_weight="1"
+                        android:src="@mipmap/sun"
+                        android:visibility="gone" />
+
+                </LinearLayout>
+            </FrameLayout>
+
+            <FrameLayout
                 android:layout_width="match_parent"
-                android:layout_weight="1"
-                android:layout_height="0dp" />
-            <ImageView
-                android:visibility="gone"
-                android:layout_marginTop="20dp"
-                android:id="@+id/img_nextDay"
-                android:src="@mipmap/sun"
-                android:layout_width="match_parent"
-                android:layout_weight="1"
-                android:layout_height="0dp" />
-            <ImageView
-                android:visibility="gone"
-                android:layout_marginTop="20dp"
-                android:layout_marginBottom="10dp"
-                android:id="@+id/img_nextnextDay"
-                android:src="@mipmap/sun"
-                android:layout_width="match_parent"
-                android:layout_weight="1"
-                android:layout_height="0dp" />
+                android:layout_height="match_parent">
 
-        </LinearLayout>
-    </FrameLayout>
+                <RelativeLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="10dp">
 
-    <FrameLayout
-        android:layout_width="match_parent"
-        android:layout_height="match_parent">
-
-        <RelativeLayout
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:layout_margin="10dp">
-
-            <TextView
-                android:id="@+id/location_city"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_centerInParent="true"
-                android:textSize="30sp" />
+                    <TextView
+                        android:id="@+id/location_city"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:layout_centerInParent="true"
+                        android:textSize="30sp" />
 
 
-        </RelativeLayout>
+                </RelativeLayout>
 
-        <TextView
-            android:id="@+id/tts_play"
+                <TextView
+                    android:id="@+id/tts_play"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:text=""
+                    android:textSize="20sp" />
+
+                <include layout="@layout/title" />
+            </FrameLayout>
+        </FrameLayout>
+
+        <android.support.design.widget.NavigationView
+            android:id="@+id/nav_view"
+            android:clickable="true"
+            android:focusable="true"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:text=""
-            android:textSize="20sp" />
+            android:layout_gravity="start"
+            app:menu="@menu/nav_menu" />
 
-
-
-
-    </FrameLayout>
-
-
-
-
+    </android.support.v4.widget.DrawerLayout>
 
 </FrameLayout>

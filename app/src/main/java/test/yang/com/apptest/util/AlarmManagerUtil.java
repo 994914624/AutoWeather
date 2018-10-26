@@ -16,6 +16,9 @@ public class AlarmManagerUtil {
 
     public static void setAlarmTime(Context context, long timeInMillis, Intent intent) {
         AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if(am==null){
+            return;
+        }
         PendingIntent sender = PendingIntent.getBroadcast(context, intent.getIntExtra("id", 0),
                 intent, PendingIntent.FLAG_CANCEL_CURRENT);
         int interval = (int) intent.getLongExtra("intervalMillis", 0);
@@ -45,6 +48,9 @@ public class AlarmManagerUtil {
     public static void setAlarm(Context context, int flag, int hour, int minute, int id, int
             week, String tips, int soundOrVibrator) {
         AlarmManager am = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if(am==null){
+           return;
+        }
         Calendar calendar = Calendar.getInstance();
         long intervalMillis = 0;
         calendar.set(calendar.get(Calendar.YEAR), calendar.get(Calendar.MONTH), calendar.get
@@ -62,7 +68,7 @@ public class AlarmManagerUtil {
         intent.putExtra("id", id);
         intent.putExtra("soundOrVibrator", soundOrVibrator);
         PendingIntent sender = PendingIntent.getBroadcast(context, id, intent, PendingIntent
-                .FLAG_CANCEL_CURRENT);
+                .FLAG_UPDATE_CURRENT);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.KITKAT) {
             am.setWindow(AlarmManager.RTC_WAKEUP, calMethod(week, calendar.getTimeInMillis()),
                     intervalMillis, sender);

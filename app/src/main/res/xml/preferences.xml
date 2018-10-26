@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
+
+    android:title="setting">
+
+    <SwitchPreference
+        android:key="pref_auto"
+        android:title="自动选择数据源"
+        android:defaultValue="true"
+        android:summary="自动选择数据源（默认方式）"/>
+
+    <CheckBoxPreference
+        android:key="pref_1"
+        android:title="数据源 1 "
+        android:summary="选择数据源 1 "
+        android:defaultValue="false" />
+
+    <CheckBoxPreference
+        android:key="pref_2"
+        android:title="数据源 2 "
+        android:summary="选择数据源 2 "
+        android:defaultValue="false" />
+
+    <CheckBoxPreference
+        android:key="pref_3"
+        android:title="数据源 3 "
+        android:summary="选择数据源 3 "
+        android:defaultValue="false" />
+
+    <CheckBoxPreference
+        android:key="pref_4"
+        android:title="数据源 4 "
+        android:summary="选择数据源 4 (开封) "
+        android:defaultValue="false" />
+
+
+
+</PreferenceScreen>

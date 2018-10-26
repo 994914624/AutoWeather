@@ -68,7 +68,7 @@ public class HtmlParseUtil {
                 for (Element element2 : p) {
                     String txt = element2.text();
                     if (txt.contains(".")) {
-                        txt = txt.substring(0, txt.indexOf(".") - 2) +"  "+ txt.substring(txt.indexOf(".") + 1) + "号";
+                        txt = txt.substring(0, txt.indexOf(".") - 2) +"  "+txt.substring(txt.indexOf(".") - 2,txt.indexOf("."))+"月"+ txt.substring(txt.indexOf(".") + 1) + "号";
                     }
 
                     sb.append(txt).append("@");
@@ -87,7 +87,7 @@ public class HtmlParseUtil {
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return "";
+        return null;
     }
 
     public static String getInput() {

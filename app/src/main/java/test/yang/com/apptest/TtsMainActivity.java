@@ -4,23 +4,38 @@ import android.Manifest;
 import android.annotation.SuppressLint;
 import android.annotation.TargetApi;
 import android.app.Activity;
+import android.content.ComponentName;
+import android.content.ContentResolver;
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
+import android.database.Cursor;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
+import android.preference.PreferenceManager;
+import android.provider.ContactsContract;
+import android.support.annotation.NonNull;
+import android.support.design.widget.NavigationView;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.view.GravityCompat;
 import android.support.v4.view.ViewCompat;
+import android.support.v4.widget.DrawerLayout;
 import android.text.TextUtils;
 import android.util.Log;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.View.OnClickListener;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowManager;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.RadioGroup;
 import android.widget.TextView;
@@ -43,9 +58,17 @@ import com.iflytek.cloud.SpeechError;
 import com.iflytek.cloud.SpeechSynthesizer;
 import com.iflytek.cloud.SynthesizerListener;
 
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -55,9 +78,11 @@ import java.util.concurrent.Executors;
 import test.yang.com.apptest.Constant.URLConstant;
 import test.yang.com.apptest.bean.Weather;
 import test.yang.com.apptest.bean.Weather2;
+import test.yang.com.apptest.bean.Weather3;
 import test.yang.com.apptest.util.AlarmManagerUtil;
 import test.yang.com.apptest.util.HtmlParseUtil;
 import test.yang.com.apptest.util.MyHttpURLUtils;
+import test.yang.com.apptest.util.WeatherDataUtil;
 
 public class TtsMainActivity extends Activity implements OnClickListener {
     private static String TAG = TtsMainActivity.class.getSimpleName();
@@ -75,7 +100,12 @@ public class TtsMainActivity extends Activity implements OnClickListener {
     //时间选择器
     private TimePickerView timePickerView;
     private String pickTime;
-
+    public DrawerLayout drawerLayout;
+    private Button menuButton;
+    private NavigationView navView;
+    private ImageView drawer_pic;
+    //最终天气的txt
+    private String speak;
     ExecutorService singleThreadExecutor = Executors.newSingleThreadExecutor();
 
     @SuppressLint("ShowToast")
@@ -89,6 +119,21 @@ public class TtsMainActivity extends Activity implements OnClickListener {
         mToast = Toast.makeText(this, "", Toast.LENGTH_SHORT);
 
 
+        //Log.d(TAG,"weixin:"+getChattingID(this,"123",WEIXIN_CHATTING_MIMETYPE));
+
+//
+//        try {
+//            Intent intent = new Intent();
+//            intent.setAction("com.tencent.mm.action.BIZSHORTCUT");
+//            intent.addCategory("android.intent.category.DEFAULT");
+//            intent.addFlags(67108864);
+//            intent.setPackage("com.tencent.mm");
+//            Bundle bundle = new Bundle();
+//            intent.putExtras(bundle);
+//            startActivity(intent);
+//        } catch (Exception e) {
+//            e.printStackTrace();
+//        }
 
         //初始化View
         initView();
@@ -118,11 +163,10 @@ public class TtsMainActivity extends Activity implements OnClickListener {
         gaodeLocation();
         //语音播报天气
         initTtsParam();
-        if (readString != null) {
-
-            mTts.startSpeaking(readString.toString(), mTtsListener);
+        //播报
+        if (mTts != null&&!TextUtils.isEmpty(speak)) {
+            mTts.startSpeaking(speak, mTtsListener);
         }
-
     }
 
     /**
@@ -177,7 +221,10 @@ public class TtsMainActivity extends Activity implements OnClickListener {
         mLocationClientG.setLocationListener(mLocationListenerG);
 
         //启动定位
-        mLocationClientG.startLocation();
+        if (TextUtils.isEmpty(location_city.getText())) {
+            mLocationClientG.startLocation();
+        }
+
 
     }
 
@@ -225,6 +272,17 @@ public class TtsMainActivity extends Activity implements OnClickListener {
      * 初始化View
      */
     private void initView() {
+        readString = new StringBuilder();
+        navView = findViewById(R.id.nav_view);
+
+        View drawerHead = navView.inflateHeaderView(R.layout.nav_header);
+
+        drawer_pic = (ImageView) drawerHead.findViewById(R.id.drawer_pic);
+
+
+        drawerLayout = findViewById(R.id.drawer_layout);
+        menuButton = findViewById(R.id.menu_button);
+
 
         img_today = (ImageView) findViewById(R.id.img_today);
         img_tomorrow = (ImageView) findViewById(R.id.img_tomorrow);
@@ -244,6 +302,46 @@ public class TtsMainActivity extends Activity implements OnClickListener {
         });
 
 
+        menuButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                drawerLayout.openDrawer(GravityCompat.START);
+            }
+        });
+
+        navView.setNavigationItemSelectedListener(new NavigationView.OnNavigationItemSelectedListener() {
+            @Override
+            public boolean onNavigationItemSelected(@NonNull MenuItem item) {
+                switch (item.getItemId()) {
+                    case R.id.nav_update:
+                        // Webview update
+                        openBrower();
+                        return true;
+
+                    case R.id.nav_setting:
+                        startActivity(new Intent(TtsMainActivity.this, SettingsActivity.class));
+                        return true;
+//                    case R.id.nav_qq:
+//                        // QQ
+//                          openQQ();
+//                        return true;
+                    default:
+
+                        return true;
+
+
+                }
+            }
+        });
+
+
+        drawer_pic.setOnClickListener(new OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // open wechat
+                openWeChat();
+            }
+        });
     }
 
     /**
@@ -259,8 +357,9 @@ public class TtsMainActivity extends Activity implements OnClickListener {
         Log.e(TAG, "onClick");
         switch (view.getId()) {
             case R.id.tts_play:
-                if (readString != null) {
-                    int code = mTts.startSpeaking(readString.toString(), mTtsListener);
+                speak = readString.toString();
+                if (!TextUtils.isEmpty(speak)) {
+                    int code = mTts.startSpeaking(speak, mTtsListener);
 
                     if (code != ErrorCode.SUCCESS) {
                         showTip("语音合成失败,错误码: " + code);
@@ -270,7 +369,7 @@ public class TtsMainActivity extends Activity implements OnClickListener {
                         //点击时再次获取天气
                         getWeatherDatas(location_city.getText() + "");
                     } else {
-                        getWeatherDatas("郑州市");
+                        getWeatherDatas("郑州");
                     }
                 }
         }
@@ -286,15 +385,13 @@ public class TtsMainActivity extends Activity implements OnClickListener {
             updateUI(imageView, R.mipmap.cloud_then_rain);
         } else if (str.contains("雨")) {
             updateUI(imageView, R.mipmap.rain);
-        }
-        else if (str.contains("小雪")) {
+        } else if (str.contains("小雪")) {
             updateUI(imageView, R.mipmap.snow_little);
         } else if (str.contains("大雪")) {
             updateUI(imageView, R.mipmap.snow_big);
         } else if (str.contains("雨加雪")) {
             updateUI(imageView, R.mipmap.snow_and_rain);
-        }
-        else if (str.contains("多云")) {
+        } else if (str.contains("多云")) {
             updateUI(imageView, R.mipmap.cloud);
         } else if (str.contains("晴")) {
             updateUI(imageView, R.mipmap.sun2);
@@ -330,7 +427,7 @@ public class TtsMainActivity extends Activity implements OnClickListener {
             String city = bdLocation.getCity();
             if (TextUtils.isEmpty(city)) {
                 //默认城市
-                city = "郑州市";
+                city = "郑州";
             }
             getWeatherDatas(city);
 
@@ -535,17 +632,6 @@ public class TtsMainActivity extends Activity implements OnClickListener {
     @Override
     public void onWindowFocusChanged(boolean hasFocus) {
         super.onWindowFocusChanged(hasFocus);
-//        if (hasFocus && Build.VERSION.SDK_INT >= 19) {
-//            View decorView = getWindow().getDecorView();
-//            decorView.setSystemUiVisibility(
-//                    View.SYSTEM_UI_FLAG_LAYOUT_STABLE
-//                            | View.SYSTEM_UI_FLAG_LAYOUT_HIDE_NAVIGATION
-//                            | View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-//                            | View.SYSTEM_UI_FLAG_HIDE_NAVIGATION
-//                            | View.SYSTEM_UI_FLAG_FULLSCREEN
-//                            //| View.SYSTEM_UI_FLAG_IMMERSIVE_STICKY
-//            );
-//        }
     }
 
     @TargetApi(21)
@@ -608,11 +694,40 @@ public class TtsMainActivity extends Activity implements OnClickListener {
         return sharedPreferences.getString("strTime", "");
     }
 
+    private String getJsonFromAssets(String fileName, Context context) {
+        //将json数据变成字符串
+        StringBuilder stringBuilder = new StringBuilder();
+        BufferedReader bf = null;
+        try {
+            //获取assets资源管理器
+            AssetManager assetManager = context.getAssets();
+            //通过管理器打开文件并读取
+            bf = new BufferedReader(new InputStreamReader(
+                    assetManager.open(fileName)));
+            String line;
+            while ((line = bf.readLine()) != null) {
+                stringBuilder.append(line);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            if (bf != null) {
+                try {
+                    bf.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return stringBuilder.toString();
+    }
+
     /**
      * 获取天气数据
      */
     private void getWeatherDatas(final String city) {
         try {
+
             //设置城市
             location_city.setText(String.format("%s", city));
 
@@ -620,15 +735,33 @@ public class TtsMainActivity extends Activity implements OnClickListener {
                 @Override
                 public void run() {
 
-                    //获取天气信息
-                    String weatherResult = MyHttpURLUtils.getNetStrings(URLConstant.URL_WEATHER_CITY_NAME_2 + city);
-                    if (TextUtils.isEmpty(weatherResult)) {
-                        // 尝试从 html 网页抓取数据
-                        getHtmlWeather(city);
-                        return;
+                    String cityJson = getJsonFromAssets("city.json", getApplicationContext());
+                    String cityCode = "101180801"; //默认开封
+                    try {
+
+                        JSONArray jsonArray = new JSONArray(cityJson);
+                        if (jsonArray.length() > 0) {
+                            for (int i = 0; i < jsonArray.length(); i++) {
+                                JSONObject jsonObject = jsonArray.getJSONObject(i);  // 遍历 jsonarray 数组，把每一个对象转成 json 对象
+                                String str = jsonObject.optString("city_name");
+                                if (city.contains(str)) {
+                                    String code = jsonObject.optString("city_code");
+                                    if (!TextUtils.isEmpty(code)) {
+                                        cityCode = code;
+                                        // Log.d("yyy",city+":"+cityCode);
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+
+                    } catch (Exception e) {
+                        e.printStackTrace();
                     }
-                    //天气2
-                    getWeather_2(weatherResult);
+                    Log.d(TAG, "cityCode:  " + cityCode);
+
+                    //获取天气信息
+                    checkSource(cityCode);
 
                 }
             });
@@ -637,111 +770,217 @@ public class TtsMainActivity extends Activity implements OnClickListener {
         }
     }
 
-
-
-
     /**
-     * 天气2数据
+     * 切换数据源
      */
-    private void getWeather_2(String weatherResult) {
-        //解析天气信息
-        Weather2 weather2 = JSON.parseObject(weatherResult, Weather2.class);
-        if (weather2 != null) {
-            if (weather2.getStatus() != 200) {
-                return;//天气请求失败
+    private void checkSource(String cityCode) {
+        try {
+            SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+            boolean pref_auto = prefs.getBoolean("pref_auto", true);
+            boolean pref_1 = prefs.getBoolean("pref_1", false);
+            boolean pref_2 = prefs.getBoolean("pref_2", false);
+            boolean pref_3 = prefs.getBoolean("pref_3", false);
+            boolean pref_4 = prefs.getBoolean("pref_4", false);
+            Log.d(TAG, "checkSource: " + pref_auto + pref_1 + pref_2 + pref_3 + pref_4);
+            ArrayList<String> list2 = null;
+            if (pref_auto) {
+                // 数据2
+                readString = new StringBuilder();
+                String weatherResult2 = MyHttpURLUtils.getNetStrings(URLConstant.URL_WEATHER_CITY_NAME_2 + cityCode);
+                list2 = WeatherDataUtil.getWeather_2_data(weatherResult2, readString);
+
+                if (list2 == null) {
+                    // 数据3
+                    readString = new StringBuilder();
+                    String weatherResult3 = MyHttpURLUtils.getNetStrings(URLConstant.URL_WEATHER_CITY_NAME_3 + cityCode + URLConstant.URL_WEATHER_CITY_KEY_3);
+                    list2 = WeatherDataUtil.getWeather_3_data(weatherResult3, readString);
+                }
+                if (list2 == null) {
+                    // 数据html
+                    readString = new StringBuilder();
+                    list2 = WeatherDataUtil.getHtmlWeather(readString);
+
+                }
+                if (list2 == null) {//数据4
+                    String weatherResult4 = MyHttpURLUtils.getNetStrings(URLConstant.URL_WEATHER_CITY_NAME_4 + cityCode);
+                    list2 = WeatherDataUtil.getWeather_4_data(weatherResult4, readString);
+                }
+
+                if (list2 == null) {
+                    showTip("数据都空了！！！");
+                    return;
+                }
+
+                // UI
+                for (int i = 0; i < list2.size(); i++) {
+                    if (i == 0) {
+                        setImgIcon(list2.get(0), img_today);
+                    } else if (i == 1) {
+                        setImgIcon(list2.get(1), img_tomorrow);
+                    } else if (i == 2) {
+                        setImgIcon(list2.get(2), img_nextDay);
+                    } else if (i == 3) {
+                        setImgIcon(list2.get(3), img_nextnextDay);
+                    }
+                }
+
+                //播放
+                speak = readString.toString();
+                if (mTts != null && !TextUtils.isEmpty(speak)) {
+                    mTts.startSpeaking(speak, mTtsListener);
+                }
+                return;
             }
-            List listForecast = weather2.getData().getForecast();
 
-            Weather2.DataBean.ForecastBean bean = (Weather2.DataBean.ForecastBean) listForecast.get(0);
-            readString = new StringBuilder();
-
-            //今天天气
-            setWeather(readString, bean, "今天 ", img_today);
-
-            //明天天气
-            Weather2.DataBean.ForecastBean bean2 = (Weather2.DataBean.ForecastBean) listForecast.get(1);
-            setWeather(readString, bean2, "明天 ", img_tomorrow);
-
-            //后天天气
-            Weather2.DataBean.ForecastBean bean3 = (Weather2.DataBean.ForecastBean) listForecast.get(2);
-            setWeather(readString, bean3, "后天 ", img_nextDay);
-
-            //大后天天气
-            Weather2.DataBean.ForecastBean bean4 = (Weather2.DataBean.ForecastBean) listForecast.get(3);
-            setWeather(readString, bean4, "大后天 ", img_nextnextDay);
-
-            Log.d(TAG, readString.toString() + "");
-            if (mTts != null) {
-                mTts.startSpeaking(readString.toString(), mTtsListener);
+            //CheckBox 只能单选
+            if (pref_1) {
+                readString = new StringBuilder();
+                String weatherResult2 = MyHttpURLUtils.getNetStrings(URLConstant.URL_WEATHER_CITY_NAME_2 + cityCode);
+                list2 = WeatherDataUtil.getWeather_2_data(weatherResult2, readString);
             }
+
+            if (pref_2) {
+                readString = new StringBuilder();
+                String weatherResult3 = MyHttpURLUtils.getNetStrings(URLConstant.URL_WEATHER_CITY_NAME_3 + cityCode + URLConstant.URL_WEATHER_CITY_KEY_3);
+                list2 = WeatherDataUtil.getWeather_3_data(weatherResult3, readString);
+            }
+
+            if (pref_3) {//备用4
+                readString = new StringBuilder();
+                String weatherResult4 = MyHttpURLUtils.getNetStrings(URLConstant.URL_WEATHER_CITY_NAME_4 + cityCode);
+                list2 = WeatherDataUtil.getWeather_4_data(weatherResult4, readString);
+            }
+
+            if (pref_4) {
+                // 这里是固定的city
+                readString = new StringBuilder();
+                list2 = WeatherDataUtil.getHtmlWeather(readString);
+                location_city.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        location_city.setText("开封");
+                    }
+                });
+            }
+
+
+            if (list2 == null) {
+                showTip("数据都空了！！！");
+                return;
+            }
+
+            // UI
+            for (int i = 0; i < list2.size(); i++) {
+                if (i == 0) {
+                    setImgIcon(list2.get(0), img_today);
+                } else if (i == 1) {
+                    setImgIcon(list2.get(1), img_tomorrow);
+                } else if (i == 2) {
+                    setImgIcon(list2.get(2), img_nextDay);
+                } else if (i == 3) {
+                    setImgIcon(list2.get(3), img_nextnextDay);
+                }
+            }
+
+            //播放
+            speak = readString.toString();
+            Log.d(TAG, "speak: " + speak);
+            if (mTts != null && !TextUtils.isEmpty(speak)) {
+                mTts.startSpeaking(speak, mTtsListener);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
         }
     }
 
-    private void setWeather(StringBuilder stringBuilder, Weather2.DataBean.ForecastBean bean, String day, ImageView imageView) {
-        readString.append(day).append(bean.getDate().substring(0, bean.getDate().length() - 4)).append("号 ");
-        readString.append(bean.getDate().substring(bean.getDate().length() - 3, bean.getDate().length())).append("   ");
-        readString.append("  天气 ").append(bean.getType()).append("   ");
-        readString.append(bean.getFx()).append("  ").append(bean.getFl().substring(bean.getFl().length() - 2, bean.getFl().length())).append("   ");
-        readString.append("最低气温  ").append(bean.getLow().substring(3, bean.getLow().length() - 3)).append("℃");
-        readString.append("最高气温  ").append(bean.getHigh().substring(3, bean.getHigh().length() - 3)).append("℃");
-        readString.append("          ");
-        //设置天气图标
-        setImgIcon(bean.getType(), imageView);
-    }
-
 
     /**
-     * html 获取的天气信息
+     *      * 进去聊天界面
+     *      * @param context
+     *      * @param id  手机通讯录中版本的微信的自动增长列（下面有一个方法或告诉大家如何获取）
+     *     
      */
-    private void getHtmlWeather(String city) {
-        //设置城市
-        location_city.setText(String.format("%s", "开封市"));
-        singleThreadExecutor.execute(new Runnable() {
-            @Override
-            public void run() {
-                String string = HtmlParseUtil.getInput();
-                Log.d(TAG, ":::::" + string);
-                try {
+    final static String WEIXIN_CHATTING_MIMETYPE = "vnd.android.cursor.item/vnd.com.tencent.mm.chatting.profile";//微信聊天
 
-                    String strArr[] = string.split("#");
-                    StringBuilder sb = new StringBuilder();
-                    for (int i = 0; i < strArr.length; i++) {
-                        String s = strArr[i];
-                        if (i == 0) {
-                            String[] s1 = s.split("@");
-                            setImgIcon(s1[1], img_today);
-                            sb.append(s1[0]).append("   天气 ").append(s1[1]).append("    ").append(s1[2]).append("     温度").append(s1[3]).append("         \n");
-                        }
-                        if (i == 1) {
-                            String[] s1 = s.split("@");
-                            setImgIcon(s1[1], img_tomorrow);
-                            sb.append(s1[0]).append("   天气 ").append(s1[1]).append("    ").append(s1[2]).append("     最高温度").append(s1[3].substring(0,s1[3].indexOf(' '))).append("最低温度").append(s1[3].substring(s1[3].indexOf(' '))).append("          \n");;
-                        }
-                        if (i == 2) {
-                            String[] s1 = s.split("@");
-                            setImgIcon(s1[1], img_nextDay);
-                            sb.append(s1[0]).append("   天气 ").append(s1[1]).append("    ").append(s1[2]).append("     最高气温 ").append(s1[3].substring(0,s1[3].indexOf(' '))).append("最低气温").append(s1[3].substring(s1[3].indexOf(' '))).append("         \n");;
-                        }
-                        if (i == 3) {
-                            String[] s1 = s.split("@");
-                            setImgIcon(s1[1], img_nextnextDay);
-                            sb.append("   大后天 ").append(s1[0].substring(3)).append("   天气 ").append(s1[1]).append("    ").append(s1[2]).append("     最高气温 ").append(s1[3].substring(0,s1[3].indexOf(' '))).append("最低气温").append(s1[3].substring(s1[3].indexOf(' ')));
-                        }
-
-                    }
-
-                    Log.d(TAG, ":#####" + sb.toString());
-
-
-                    if (mTts != null) {
-                        mTts.startSpeaking(sb.toString(), mTtsListener);
-                    }
-                } catch (Exception e) {
-                    e.printStackTrace();
-                }
-
-            }
-        });
+    public static void shareToFriend(Context context, int id) {
+        try {
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+            intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.setDataAndType(Uri.withAppendedPath(
+                    ContactsContract.Data.CONTENT_URI, String.valueOf(id)),
+                    WEIXIN_CHATTING_MIMETYPE);
+            context.startActivity(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
     }
+
+    /**
+     * 根据电话号码查询微信id
+     **/
+    public static int getChattingID(Context context, String querymobile, String mimeType) {
+        if (context == null || querymobile == null || querymobile.equals("")) {
+            return 0;
+        }
+        ContentResolver resolver = context.getContentResolver();
+        Uri uri = Uri.parse("content://com.android.contacts/data");
+        StringBuilder sb = new StringBuilder();
+        sb.append(ContactsContract.Data.MIMETYPE).append(" = ").append("'");
+        sb.append(mimeType).append("'");
+        sb.append(" AND ").append("replace(data1,' ','')").append(" = ").append("'").append("18345019902").append("'");
+        Cursor cursor = resolver.query(uri, new String[]{ContactsContract.Data._ID}, sb.toString(), null, null);
+        while (cursor.moveToNext()) {
+            int wexin_id = cursor.getInt(cursor.getColumnIndex(ContactsContract.Data._ID));
+            return wexin_id;
+        }
+        cursor.close();
+        return 0;
+    }
+
+    /**
+     * wechat
+     */
+    private void openWeChat() {
+        try {
+            Intent intent = new Intent(Intent.ACTION_MAIN);
+            ComponentName cmp = new ComponentName("com.tencent.mm", "com.tencent.mm.ui.LauncherUI");
+            intent.addCategory(Intent.CATEGORY_LAUNCHER);
+            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            intent.setComponent(cmp);
+            startActivity(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * qq
+     */
+    private void openQQ() {
+        try {
+            String url = "mqqwpa://im/chat?chat_type=wpa&uin=1691850993";
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * 打开 brower update
+     */
+    private void openBrower() {
+        try {
+            Intent intent = new Intent();
+            intent.setAction("android.intent.action.VIEW");
+            Uri uri = Uri.parse("https://fir.im/yzk");
+            intent.setData(uri);
+            //包名、要打开的activity
+            intent.setClassName("com.android.browser", "com.android.browser.BrowserActivity");
+            startActivity(intent);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
 }
