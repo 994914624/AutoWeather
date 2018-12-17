@@ -395,7 +395,7 @@ public class TtsMainActivity extends Activity implements OnClickListener {
             updateUI(imageView, R.mipmap.cloud);
         } else if (str.contains("晴")) {
             updateUI(imageView, R.mipmap.sun2);
-        } else if (str.contains("阴")) {
+        } else if (str.contains("阴")||str.contains("霾")||str.contains("雾")) {
             updateUI(imageView, R.mipmap.overcast);
         }
 
@@ -613,7 +613,7 @@ public class TtsMainActivity extends Activity implements OnClickListener {
                             Manifest.permission.LOCATION_HARDWARE, Manifest.permission.READ_PHONE_STATE,
                             Manifest.permission.WRITE_SETTINGS, Manifest.permission.READ_EXTERNAL_STORAGE,
                             Manifest.permission.ACCESS_COARSE_LOCATION, Manifest.permission.ACCESS_FINE_LOCATION,
-                            Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_CONTACTS}, 0x0010);
+                            Manifest.permission.RECORD_AUDIO, Manifest.permission.READ_CONTACTS}, (int) (Math.random() * 1000));
                 }
             }
         } catch (Exception e) {
@@ -789,16 +789,28 @@ public class TtsMainActivity extends Activity implements OnClickListener {
                 String weatherResult2 = MyHttpURLUtils.getNetStrings(URLConstant.URL_WEATHER_CITY_NAME_2 + cityCode);
                 list2 = WeatherDataUtil.getWeather_2_data(weatherResult2, readString);
 
-                if (list2 == null) {
-                    // 数据3
-                    readString = new StringBuilder();
-                    String weatherResult3 = MyHttpURLUtils.getNetStrings(URLConstant.URL_WEATHER_CITY_NAME_3 + cityCode + URLConstant.URL_WEATHER_CITY_KEY_3);
-                    list2 = WeatherDataUtil.getWeather_3_data(weatherResult3, readString);
-                }
+                Log.d("qqq","code:"+cityCode);
+                Log.d("qqq","weatherResult2:"+weatherResult2);
+
+//                if (list2 == null) {
+//                    // 数据3
+//                    readString = new StringBuilder();
+//                    String weatherResult3 = MyHttpURLUtils.getNetStrings(URLConstant.URL_WEATHER_CITY_NAME_3 + cityCode + URLConstant.URL_WEATHER_CITY_KEY_3);
+//                    list2 = WeatherDataUtil.getWeather_3_data(weatherResult3, readString);
+//                }
+
                 if (list2 == null) {
                     // 数据html
                     readString = new StringBuilder();
                     list2 = WeatherDataUtil.getHtmlWeather(readString);
+                    if(list2 != null){
+                        location_city.post(new Runnable() {
+                            @Override
+                            public void run() {
+                                location_city.setText("开封");
+                            }
+                        });
+                    }
 
                 }
                 if (list2 == null) {//数据4
@@ -813,6 +825,8 @@ public class TtsMainActivity extends Activity implements OnClickListener {
 
                 // UI
                 for (int i = 0; i < list2.size(); i++) {
+                    Log.d(TAG, " ui " + list2.get(i));
+
                     if (i == 0) {
                         setImgIcon(list2.get(0), img_today);
                     } else if (i == 1) {

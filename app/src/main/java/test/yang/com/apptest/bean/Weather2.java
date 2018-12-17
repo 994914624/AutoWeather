@@ -264,6 +264,22 @@ public class Weather2 {
         }
 
         public static class ForecastBean {
+            @Override
+            public String toString() {
+                return "ForecastBean{" +
+                        "date='" + date + '\'' +
+                        ", sunrise='" + sunrise + '\'' +
+                        ", high='" + high + '\'' +
+                        ", low='" + low + '\'' +
+                        ", sunset='" + sunset + '\'' +
+                        ", aqi=" + aqi +
+                        ", fx='" + fx + '\'' +
+                        ", fl='" + fl + '\'' +
+                        ", type='" + type + '\'' +
+                        ", notice='" + notice + '\'' +
+                        '}';
+            }
+
             /**
              * date : 16日星期日
              * sunrise : 05:54
@@ -287,6 +303,15 @@ public class Weather2 {
             private String fl;
             private String type;
             private String notice;
+            private String week;
+
+            public String getWeek() {
+                return week;
+            }
+
+            public void setWeek(String week) {
+                this.week = week;
+            }
 
             public String getDate() {
                 return date;

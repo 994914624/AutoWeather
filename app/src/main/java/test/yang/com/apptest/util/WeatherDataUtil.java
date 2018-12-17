@@ -77,6 +77,7 @@ public class WeatherDataUtil {
             }
         } catch (Exception e) {
             e.printStackTrace();
+            Log.e(TAG,""+e.getMessage());
         }
         return null;
     }
@@ -104,6 +105,8 @@ public class WeatherDataUtil {
                         break;
                     }
                     Weather2.DataBean.ForecastBean bean = (Weather2.DataBean.ForecastBean) list.get(i);
+
+                    Log.e(TAG,"：---- "+bean.toString());
                     String date = bean.getDate();
                     String day;
                     if (i == 0) {
@@ -115,8 +118,8 @@ public class WeatherDataUtil {
                     } else {
                         day = "大后天 ";
                     }
-                    readString.append(day).append(bean.getDate().substring(0, bean.getDate().length() - 4)).append("号 ");
-                    readString.append(bean.getDate().substring(bean.getDate().length() - 3, bean.getDate().length())).append("   ");
+                    readString.append(day).append(bean.getDate()).append("号 ");
+                    readString.append(bean.getWeek()).append("   ");
                     String tianqi = bean.getType();
                     readString.append("  天气 ").append(tianqi).append("   ");
                     arrayList.add(tianqi);
@@ -126,11 +129,13 @@ public class WeatherDataUtil {
                     readString.append("          ");
                 }
                 Log.d(TAG, " 2 " + readString.toString());
+                Log.d(TAG, " arrayList " + arrayList.size());
                 return arrayList;
             }
             return null;
         } catch (Exception e) {
             e.printStackTrace();
+            Log.e(TAG,""+e.getMessage());
             return null;
         }
     }
