@@ -118,14 +118,17 @@ public class WeatherDataUtil {
                     } else {
                         day = "大后天 ";
                     }
-                    readString.append(day).append(bean.getDate()).append("号 ");
+                   if(date.startsWith("0")){
+                       date = date.substring(1);
+                   }
+                    readString.append(day).append(date).append("号 ");
                     readString.append(bean.getWeek()).append("   ");
                     String tianqi = bean.getType();
                     readString.append("  天气 ").append(tianqi).append("   ");
                     arrayList.add(tianqi);
                     readString.append(bean.getFx()).append("  ").append(bean.getFl().substring(bean.getFl().length() - 2, bean.getFl().length())).append("   ");
-                    readString.append(" 最低气温  ").append(bean.getLow().substring(3, bean.getLow().length() - 3)).append("℃");
-                    readString.append(" 最高气温  ").append(bean.getHigh().substring(3, bean.getHigh().length() - 3)).append("℃");
+                    readString.append(" 最低气温  ").append(bean.getLow().substring(3));
+                    readString.append(" 最高气温  ").append(bean.getHigh().substring(3));
                     readString.append("          ");
                 }
                 Log.d(TAG, " 2 " + readString.toString());

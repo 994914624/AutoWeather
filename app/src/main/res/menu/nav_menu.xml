@@ -26,6 +26,9 @@
         android:id="@+id/group_4"
         android:checkableBehavior="none">
         <item
-            android:title=""/>
+            app:itemBackground="@color/colorAccent"
+            android:id="@+id/nav_version"
+            android:title="当前版本"/>
+
     </group>
 </menu>

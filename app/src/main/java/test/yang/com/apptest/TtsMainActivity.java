@@ -274,6 +274,11 @@ public class TtsMainActivity extends Activity implements OnClickListener {
     private void initView() {
         readString = new StringBuilder();
         navView = findViewById(R.id.nav_view);
+        try {
+            navView.getMenu().getItem(2).setTitle("当前版本："+ this.getPackageManager().getPackageInfo(this.getPackageName(),0).versionName);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
 
         View drawerHead = navView.inflateHeaderView(R.layout.nav_header);
 
